@@ -1,0 +1,40 @@
+{
+  "publicHolidays": [
+    { "date": "2025-01-13", "name": "Bhogi" },
+    { "date": "2025-01-14", "name": "Sankranti" },
+    { "date": "2025-01-15", "name": "Kanuma" },
+    { "date": "2025-01-26", "name": "Republic Day" },
+    { "date": "2025-02-28", "name": "Mahashivaratri / Shabe-Meraj" },
+    { "date": "2025-03-14", "name": "Holi" },
+    { "date": "2025-03-27", "name": "Demo Holiday" },
+    { "date": "2025-03-31", "name": "Ugadi" },
+    { "date": "2025-03-31", "name": "Ramzan (Id-ul-Fitr)" },
+    { "date": "2025-04-05", "name": "Sri Rama Navami" },
+    { "date": "2025-04-14", "name": "Dr. B.R. Ambedkar's Birthday" },
+    { "date": "2025-04-18", "name": "Good Friday" },
+    { "date": "2025-06-07", "name": "Bakrid (Id-ul-Zuha)" },
+    { "date": "2025-07-06", "name": "Moharram" },
+    { "date": "2025-08-15", "name": "Independence Day" },
+    { "date": "2025-08-28", "name": "Sri Krishna Janmashtami" },
+    { "date": "2025-09-06", "name": "Vinayaka Chaturthi" },
+    { "date": "2025-09-15", "name": "Milad-un-Nabi" },
+    { "date": "2025-10-02", "name": "Mahatma Gandhi's Birthday" },
+    { "date": "2025-10-07", "name": "Dussehra (Vijaya Dashami)" },
+    { "date": "2025-12-25", "name": "Christmas" }
+  ],
+  "optionalHolidays": [
+    { "date": "2025-01-01", "name": "New Year's Day" },
+    { "date": "2025-02-27", "name": "Shabe-Barath / Shabe-Qadar" },
+    { "date": "2025-04-10", "name": "Mahaveer Jayanti" },
+    { "date": "2025-04-30", "name": "Basaveswara Jayanti" },
+    { "date": "2025-05-12", "name": "Buddha Purnima" },
+    { "date": "2025-06-15", "name": "Id-e-Gade" },
+    { "date": "2025-07-05", "name": "Birth of Prophet Mohammed" },
+    { "date": "2025-09-21", "name": "Mahalaya Amavasya" },
+    { "date": "2025-10-09", "name": "Yadavashtami" },
+    { "date": "2025-11-05", "name": "Kartika Purnima / Gurunanak's Birthday" },
+    { "date": "2025-12-06", "name": "Hazrat Syed Mohd. Jayanthi Mehdi's Birthday" },
+    { "date": "2025-12-24", "name": "Christmas Eve" },
+    { "date": "2025-12-26", "name": "Boxing Day" }
+  ]
+}

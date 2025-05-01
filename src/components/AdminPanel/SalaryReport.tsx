@@ -1,0 +1,413 @@
+import React, { useState, useEffect } from 'react';
+import { DollarSign, Calendar, ChevronDown, Printer, Building, Search, IndianRupee } from 'lucide-react';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import toast from 'react-hot-toast';
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface SalaryRecord {
+  id: string;
+  userId: string;
+  employeeId: string;
+  bankAccount: string;
+  pan: string;
+  month: string;
+  year: string;
+  basicPay: string;
+  hra: string;
+  da: string;
+  specialAllowance: string;
+  medicalAllowance: string;
+  conveyanceAllowance: string;
+  pf: string;
+  professionalTax: string;
+  incomeTax: string;
+  insurance: string;
+  totalEarnings: number;
+  totalDeductions: number;
+  netSalary: number;
+  timestamp: { seconds: number };
+  departmentId: string;
+  departmentName: string;
+  user?: {
+    name: string;
+    designation: string;
+  };
+}
+
+export default function SalaryReport() {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    new Date().toLocaleString('default', { month: 'long' })
+  );
+  const [selectedYear, setSelectedYear] = useState<string>(
+    new Date().getFullYear().toString()
+  );
+  const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [totals, setTotals] = useState({
+    totalEarnings: 0,
+    totalDeductions: 0,
+    netSalary: 0,
+    employeeCount: 0
+  });
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const years = Array.from(
+    { length: 5 },
+    (_, i) => (new Date().getFullYear() - 2 + i).toString()
+  );
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  useEffect(() => {
+    fetchSalaryRecords();
+  }, [selectedDepartment, selectedMonth, selectedYear]);
+
+  const fetchDepartments = async () => {
+    try {
+      const allDepartments: Department[] = [];
+      const orgsRef = collection(db, 'organizations');
+      const orgsSnapshot = await getDocs(orgsRef);
+
+      for (const orgDoc of orgsSnapshot.docs) {
+        const deptsRef = collection(db, `organizations/${orgDoc.id}/departments`);
+        const deptsSnapshot = await getDocs(deptsRef);
+        deptsSnapshot.docs.forEach(deptDoc => {
+          allDepartments.push({
+            id: deptDoc.id,
+            name: deptDoc.data().name
+          });
+        });
+      }
+
+      setDepartments(allDepartments);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      toast.error('Failed to fetch departments');
+    }
+  };
+
+  const fetchSalaryRecords = async () => {
+    try {
+      setLoading(true);
+      const salariesRef = collection(db, 'salaries');
+      
+      // Build query conditions
+      let conditions = [
+        where('month', '==', selectedMonth),
+        where('year', '==', selectedYear)
+      ];
+
+      if (selectedDepartment !== 'all') {
+        conditions.push(where('departmentId', '==', selectedDepartment));
+      }
+
+      // Create query with all conditions
+      const q = query(salariesRef, ...conditions);
+      const querySnapshot = await getDocs(q);
+      
+      // Process salary records
+      const records = await Promise.all(
+        querySnapshot.docs.map(async (docSnapshot) => {
+          const salaryData = { id: docSnapshot.id, ...docSnapshot.data() } as SalaryRecord;
+          
+          // Fetch user details
+          const usersRef = collection(db, 'users');
+          const userQuery = query(usersRef, where('uid', '==', salaryData.userId));
+          const userSnapshot = await getDocs(userQuery);
+          
+          if (!userSnapshot.empty) {
+            const userData = userSnapshot.docs[0].data();
+            salaryData.user = {
+              name: userData.name,
+              designation: userData.designation
+            };
+          }
+          
+          return salaryData;
+        })
+      );
+
+      // Calculate totals
+      const calculatedTotals = records.reduce((acc, record) => ({
+        totalEarnings: acc.totalEarnings + record.totalEarnings,
+        totalDeductions: acc.totalDeductions + record.totalDeductions,
+        netSalary: acc.netSalary + record.netSalary,
+        employeeCount: acc.employeeCount + 1
+      }), {
+        totalEarnings: 0,
+        totalDeductions: 0,
+        netSalary: 0,
+        employeeCount: 0
+      });
+
+      setTotals(calculatedTotals);
+      setSalaryRecords(records);
+    } catch (error) {
+      console.error('Error fetching salary records:', error);
+      toast.error('Failed to fetch salary records');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const filteredRecords = salaryRecords.filter(record => {
+    const searchString = searchQuery.toLowerCase();
+    return (
+      record.user?.name?.toLowerCase().includes(searchString) ||
+      record.user?.designation?.toLowerCase().includes(searchString) ||
+      record.departmentName?.toLowerCase().includes(searchString)
+    );
+  });
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h2 className="text-xl font-semibold flex items-center">
+          <DollarSign size={24} className="mr-2" />
+          Salary Report
+        </h2>
+        <button
+          onClick={handlePrint}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          <Printer size={20} />
+          <span>Print Report</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 no-print">
+        <div className="relative">
+          <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <select
+            value={selectedDepartment}
+            onChange={(e) => setSelectedDepartment(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg appearance-none"
+          >
+            <option value="all">All Divisions</option>
+            {departments.map(dept => (
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg appearance-none"
+          >
+            {months.map(month => (
+              <option key={month} value={month}>{month}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg appearance-none"
+          >
+            {years.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+      </div>
+
+      <div id="printable-content">
+        <div className="print-only text-center mb-6">
+          <img
+            src="https://media.licdn.com/dms/image/v2/C560BAQEV5bmhSzmwXA/company-logo_200_200/company-logo_200_200/0/1632725060447?e=2147483647&v=beta&t=HLSjgaNC62aOcklA0mMrLOzEue-CD6QsGxP8fVnr610"
+            alt="APMB Logo"
+            className="h-20 mx-auto mb-4"
+          />
+          <h1 className="text-2xl font-bold">Andhra Pradesh Maritime Board</h1>
+          <p className="text-lg">Salary Report - {selectedMonth} {selectedYear}</p>
+          <p className="text-md">
+            {selectedDepartment === 'all' 
+              ? 'All Departments' 
+              : `Department: ${departments.find(dept => dept.id === selectedDepartment)?.name}`}
+          </p>
+        </div>
+
+        <div className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-100">
+          <h3 className="text-lg font-semibold mb-4 flex items-center">
+            <IndianRupee size={20} className="mr-2" />
+            Summary Report
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+              <p className="text-sm text-gray-600 mb-1">Total Employees</p>
+              <p className="text-2xl font-bold text-blue-600">{totals.employeeCount}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+              <p className="text-sm text-gray-600 mb-1">Total Earnings</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(totals.totalEarnings)}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+              <p className="text-sm text-gray-600 mb-1">Total Deductions</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(totals.totalDeductions)}</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+              <p className="text-sm text-gray-600 mb-1">Net Salary Payout</p>
+              <p className="text-2xl font-bold text-blue-600">{formatCurrency(totals.netSalary)}</p>
+            </div>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Division</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Earnings</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deductions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Salary</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredRecords.map((record) => (
+                  <tr key={record.id}>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-medium">{record.user?.name || 'N/A'}</p>
+                        <p className="text-sm text-gray-500">{record.user?.designation}</p>
+                        <p className="text-sm text-gray-500">ID: {record.employeeId}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">{record.departmentName}</td>
+                    <td className="px-6 py-4 text-green-600">{formatCurrency(record.totalEarnings)}</td>
+                    <td className="px-6 py-4 text-red-600">{formatCurrency(record.totalDeductions)}</td>
+                    <td className="px-6 py-4 text-blue-600 font-medium">{formatCurrency(record.netSalary)}</td>
+                  </tr>
+                ))}
+                {filteredRecords.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                      No salary records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot className="bg-gray-50 font-semibold">
+                <tr>
+                  <td className="px-6 py-4">Total ({totals.employeeCount} Employees)</td>
+                  <td className="px-6 py-4"></td>
+                  <td className="px-6 py-4 text-green-600">{formatCurrency(totals.totalEarnings)}</td>
+                  <td className="px-6 py-4 text-red-600">{formatCurrency(totals.totalDeductions)}</td>
+                  <td className="px-6 py-4 text-blue-600">{formatCurrency(totals.netSalary)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-8 text-center text-sm text-gray-500 print-only">
+          <p>This is a computer-generated document. No signature is required.</p>
+          <p>Generated on: {new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}</p>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          .print-only {
+            display: block !important;
+          }
+          body * {
+            visibility: hidden;
+          }
+          #printable-content,
+          #printable-content * {
+            visibility: visible;
+          }
+          #printable-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          @page {
+            size: A4 landscape;
+            margin: 20mm;
+          }
+          table {
+            page-break-inside: auto;
+          }
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          thead {
+            display: table-header-group;
+          }
+          tfoot {
+            display: table-footer-group;
+          }
+        }
+        @media screen {
+          .print-only {
+            display: none;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}

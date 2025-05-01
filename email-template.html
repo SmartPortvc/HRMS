@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HRMS Workflow Invitation</title>
+    <style>
+        /* Reset styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+        }
+
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* Content */
+        .content {
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Button */
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666666;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>HRMS Workflow</h1>
+        </div>
+        <div class="content">
+            <h2>Hello {{to_name}},</h2>
+            <p>You have been invited to join HRMS Workflow. We're excited to have you on board!</p>
+            <p>Please click the button below to create your account and get started:</p>
+            <center>
+                <a href="{{registration_link}}" class="button">Create Your Account</a>
+            </center>
+            <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+            <p style="word-break: break-all;">{{registration_link}}</p>
+            <p>This invitation link will expire in 48 hours.</p>
+            <p>Best regards,<br>HRMS Workflow Team</p>
+        </div>
+        <div class="footer">
+            <p>© 2025 Volteo Maritime. All rights reserved.</p>
+            <p>If you didn't request this invitation, please ignore this email.</p>
+        </div>
+    </div>
+</body>
+</html>
