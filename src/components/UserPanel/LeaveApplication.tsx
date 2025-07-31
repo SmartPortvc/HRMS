@@ -164,6 +164,25 @@ export default function LeaveApplication() {
           reader.onload = () => resolve(reader.result as string);
         });
       }
+
+      // Determine approval flow based on user role
+      const approvalFlow = {
+        hod:
+          userData?.role === "department_admin"
+            ? {
+                status: "approved",
+                by: {
+                  uid: userData.uid,
+                  name: userData.name,
+                  email: userData.email,
+                },
+                at: Timestamp.now(),
+                note: "Auto-approved for department admin",
+              }
+            : { status: "pending", by: null, at: null, note: null },
+        ceo: { status: "pending", by: null, at: null, note: null },
+      };
+
       const dataToSubmit = {
         fileName: fileName || null,
         fileData: fileData || null,
@@ -178,12 +197,10 @@ export default function LeaveApplication() {
           name: userData.name,
           email: userData.email,
           departmentId: userData.departmentId,
+          departmentName: userData.departmentName || userData.departmentId,
         },
-        status: "pending",
-        approval: {
-          hod: { status: "pending", by: null, at: null, note: null },
-          ceo: { status: "pending", by: null, at: null, note: null },
-        },
+        status: userData?.role === "department_admin" ? "pending" : "pending",
+        approval: approvalFlow,
       };
 
       await addDoc(collection(db, "leave_applications"), dataToSubmit);
@@ -256,15 +273,15 @@ export default function LeaveApplication() {
       if (userData?.role === "admin") {
         // For admin, only count applications that have HOD approval
         if (app.approval?.hod?.status === "approved") {
-          if (app.status === "pending") counts.pending++;
-          else if (app.status === "approved") counts.approved++;
-          else if (app.status === "rejected") counts.rejected++;
+          if (app.approval?.hod?.status === "approved") counts.approved++;
+          else if (app.approval?.hod?.status === "rejected") counts.rejected++;
+          counts.pending++;
         }
       } else {
         // For other roles, count all applications
-        if (app.status === "pending") counts.pending++;
-        else if (app.status === "approved") counts.approved++;
-        else if (app.status === "rejected") counts.rejected++;
+        if (app.approval?.hod?.status === "pending") counts.pending++;
+        else if (app.approval?.hod?.status === "approved") counts.approved++;
+        else if (app.approval?.hod?.status === "rejected") counts.rejected++;
       }
     });
 
@@ -491,8 +508,16 @@ export default function LeaveApplication() {
       (app) => app.createdBy.departmentId === userData.departmentId
     );
     const counts = countApplications(departmentApps);
-    const pendingHodApps = departmentApps.filter(
-      (app) => app.approval?.hod?.status === "pending"
+
+    // For department admin, show applications that:
+    // 1. Are from their department AND
+    // 2. Either need HOD approval (for regular users) OR need CEO approval (for department admin's own applications)
+    const pendingReviewApps = departmentApps.filter(
+      (app) =>
+        (app.createdBy.uid === userData.uid &&
+          app.approval?.ceo?.status === "pending") ||
+        (app.createdBy.uid !== userData.uid &&
+          app.approval?.hod?.status === "pending")
     );
 
     return (
@@ -638,19 +663,19 @@ export default function LeaveApplication() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-6 flex items-center">
             <Upload size={24} className="mr-2" />
-            Pending HOD Approval ({pendingHodApps.length})
+            Applications Pending Your Review ({pendingReviewApps.length})
           </h2>
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
-          ) : pendingHodApps.length === 0 ? (
+          ) : pendingReviewApps.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No pending applications for HOD approval.
+              No applications pending your review.
             </div>
           ) : (
             <div className="space-y-4">
-              {pendingHodApps.map((app) => (
+              {pendingReviewApps.map((app) => (
                 <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -692,18 +717,30 @@ export default function LeaveApplication() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 ml-4">
-                      <button
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                        onClick={() => handleAction(app.id, "approve", "hod")}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                        onClick={() => handleAction(app.id, "reject", "hod")}
-                      >
-                        Reject
-                      </button>
+                      {app.createdBy.uid === userData.uid ? (
+                        <p className="text-sm text-gray-500">
+                          Waiting for CEO approval
+                        </p>
+                      ) : (
+                        <>
+                          <button
+                            className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                            onClick={() =>
+                              handleAction(app.id, "approve", "hod")
+                            }
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                            onClick={() =>
+                              handleAction(app.id, "reject", "hod")
+                            }
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -717,15 +754,16 @@ export default function LeaveApplication() {
             <Upload size={24} className="mr-2" />
             Department Leave History
           </h2>
-          {departmentApps.filter((app) => app.status !== "pending").length ===
-          0 ? (
+          {departmentApps.filter(
+            (app) => app.approval?.hod?.status !== "pending"
+          ).length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No approved or rejected applications yet.
             </div>
           ) : (
             <div className="space-y-4">
               {departmentApps
-                .filter((app) => app.status !== "pending")
+                .filter((app) => app.approval?.hod?.status !== "pending")
                 .map((app) => (
                   <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between items-start">
