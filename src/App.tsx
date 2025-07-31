@@ -1,13 +1,14 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import SignIn from './pages/SignIn';
-import AdminPanel from './pages/AdminPanel';
-import UserPanel from './pages/UserPanel';
-import Register from './pages/Register';
-import InviteUser from './pages/InviteUser.tsx';
-import SalaryForm from './pages/SalaryForm';
-import ProtectedRoute from './components/ProtectedRoute';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import SignIn from "./pages/SignIn";
+import AdminPanel from "./pages/AdminPanel";
+import UserPanel from "./pages/UserPanel";
+import Register from "./pages/Register";
+import InviteUser from "./pages/InviteUser.tsx";
+import SalaryForm from "./pages/SalaryForm";
+import EmployeeDetails from "./components/AdminPanel/EmployeeDetails";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -21,6 +22,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminPanel />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/master-data/employees/:id"
+          element={
+            <ProtectedRoute>
+              <EmployeeDetails />
             </ProtectedRoute>
           }
         />

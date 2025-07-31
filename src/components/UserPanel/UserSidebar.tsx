@@ -12,7 +12,6 @@ import {
   IndianRupee,
   Bell,
 } from "lucide-react";
-import { SlEnvolopeLetter } from "react-icons/sl";
 
 interface UserSidebarProps {
   user: any;
@@ -101,18 +100,6 @@ export default function UserSidebar({
         >
           <FileText size={20} />
           <span>Salary Report</span>
-        </button>
-
-        <button
-          onClick={() => onViewChange("leave-application")}
-          className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === "leave-application"
-              ? "bg-white/20"
-              : "hover:bg-white/10"
-          }`}
-        >
-          <SlEnvolopeLetter size={20} />
-          <span>Leave Application</span>
         </button>
 
         <button

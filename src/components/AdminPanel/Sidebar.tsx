@@ -11,10 +11,10 @@ import {
   IndianRupee,
   BarChart,
   FileUp,
+  Database,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { SlEnvolopeLetter } from "react-icons/sl";
 
 interface SidebarProps {
   currentView:
@@ -27,7 +27,7 @@ interface SidebarProps {
     | "salary-report"
     | "analysis"
     | "notices"
-    | "leave-application";
+    | "master-data";
   onViewChange: (
     view:
       | "users"
@@ -39,7 +39,7 @@ interface SidebarProps {
       | "salary-report"
       | "analysis"
       | "notices"
-      | "leave-application"
+      | "master-data"
   ) => void;
   onSignOut: () => void;
 }
@@ -80,6 +80,16 @@ export default function Sidebar({
         </button>
 
         <button
+          onClick={() => onViewChange("master-data")}
+          className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
+            currentView === "master-data" ? "bg-white/20" : "hover:bg-white/10"
+          }`}
+        >
+          <Database size={20} />
+          <span>Master Data</span>
+        </button>
+
+        <button
           onClick={() => onViewChange("users")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
             currentView === "users" ? "bg-white/20" : "hover:bg-white/10"
@@ -109,17 +119,6 @@ export default function Sidebar({
         >
           <IndianRupee size={20} />
           <span>Salary Report</span>
-        </button>
-        <button
-          onClick={() => onViewChange("leave-application")}
-          className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === "leave-application"
-              ? "bg-white/20"
-              : "hover:bg-white/10"
-          }`}
-        >
-          <SlEnvolopeLetter size={20} />
-          <span>Leave Application</span>
         </button>
 
         <button

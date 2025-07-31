@@ -27,7 +27,7 @@ import SalaryList from "../components/AdminPanel/SalaryList";
 import SalaryReport from "../components/AdminPanel/SalaryReport";
 import AttendanceAnalysis from "../components/AdminPanel/AttendanceAnalysis";
 import NoticeUpload from "../components/AdminPanel/NoticeUpload";
-import LeaveApplication from "../components/UserPanel/LeaveApplication";
+import MasterData from "../components/AdminPanel/MasterData";
 
 type View =
   | "users"
@@ -40,7 +40,7 @@ type View =
   | "salary-report"
   | "analysis"
   | "notices"
-  | "leave-application";
+  | "master-data";
 
 export default function AdminPanel() {
   const navigate = useNavigate();
@@ -283,6 +283,8 @@ export default function AdminPanel() {
           />
         )}
 
+        {currentView === "master-data" && <MasterData />}
+
         {currentView === "users" && (
           <UserList users={users} onViewAttendance={handleViewAttendance} />
         )}
@@ -302,7 +304,6 @@ export default function AdminPanel() {
         {currentView === "reports" && <WeeklyReports reports={weeklyReports} />}
 
         {currentView === "documents" && <DocumentManager />}
-        {currentView === "leave-application" && <LeaveApplication />}
 
         {currentView === "notices" && <NoticeUpload />}
       </div>
