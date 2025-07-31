@@ -962,14 +962,16 @@ export default function LeaveApplication() {
             <Upload size={24} className="mr-2" />
             All Leave History
           </h2>
-          {leaveApplications.filter((app) => app.status !== "pending")
-            .length === 0 ? (
+          {leaveApplications
+            .filter((app) => app.status)
+            .filter((app) => app.status !== "pending").length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               No approved or rejected applications yet.
             </div>
           ) : (
             <div className="space-y-4">
               {leaveApplications
+                .filter((app) => app.status)
                 .filter((app) => app.status !== "pending")
                 .map((app) => (
                   <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
