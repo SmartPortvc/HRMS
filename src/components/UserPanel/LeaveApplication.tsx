@@ -69,7 +69,7 @@ export default function LeaveApplication() {
   const userCurrent = useCurrentUser();
   const userData = userCurrent && userCurrent.userData;
   const userLoading = userCurrent && userCurrent.loading;
-  const [showForm, setShowForm] = useState(false); // for department_admin apply button
+  const [showForm, setShowForm] = useState(false);
 
   const validateFile = (file: File): boolean => {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -97,7 +97,6 @@ export default function LeaveApplication() {
     }
   };
 
-  // Fetch leave applications based on role
   const fetchApplications = async () => {
     setLoading(true);
     try {
@@ -122,18 +121,6 @@ export default function LeaveApplication() {
             ...doc.data(),
           } as LeaveApplicationType)
       );
-      // Filter for department_admin: only show leaves in their department that are pending HOD approval
-      if (userData?.role === "department_admin") {
-        apps = apps.filter((app) => app.approval?.hod?.status === "pending");
-      }
-      // For admin: only show leaves approved by HOD but pending CEO/Admin
-      if (userData?.role === "admin") {
-        apps = apps.filter(
-          (app) =>
-            app.approval?.hod?.status === "approved" &&
-            app.approval?.ceo?.status === "pending"
-        );
-      }
       setLeaveApplications(apps);
     } catch (err) {
       toast.error("Failed to fetch leave applications");
@@ -199,7 +186,6 @@ export default function LeaveApplication() {
         },
       };
 
-      console.log("Submitting data:", dataToSubmit, userData);
       await addDoc(collection(db, "leave_applications"), dataToSubmit);
       await fetchApplications();
       toast.success("Leave application submitted!");
@@ -218,7 +204,6 @@ export default function LeaveApplication() {
     }
   };
 
-  // Approve/Reject handlers for department_admin and admin
   const handleAction = async (
     appId: string,
     action: "approve" | "reject",
@@ -247,7 +232,6 @@ export default function LeaveApplication() {
         at: Timestamp.now(),
         note,
       };
-      // If rejected, set status to rejected
       if (action === "reject") {
         updateData.status = "rejected";
       } else if (action === "approve" && level === "ceo") {
@@ -261,10 +245,31 @@ export default function LeaveApplication() {
     }
   };
 
-  console.log({
-    userLoading,
-  });
+  const countApplications = (apps: LeaveApplicationType[]) => {
+    const counts = {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+    };
 
+    apps.forEach((app) => {
+      if (userData?.role === "admin") {
+        // For admin, only count applications that have HOD approval
+        if (app.approval?.hod?.status === "approved") {
+          if (app.status === "pending") counts.pending++;
+          else if (app.status === "approved") counts.approved++;
+          else if (app.status === "rejected") counts.rejected++;
+        }
+      } else {
+        // For other roles, count all applications
+        if (app.status === "pending") counts.pending++;
+        else if (app.status === "approved") counts.approved++;
+        else if (app.status === "rejected") counts.rejected++;
+      }
+    });
+
+    return counts;
+  };
   if (userLoading || userLoading === undefined) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -273,7 +278,6 @@ export default function LeaveApplication() {
     );
   }
 
-  // User role: user
   if (userData?.role === "user") {
     return (
       <div className="space-y-8">
@@ -288,7 +292,6 @@ export default function LeaveApplication() {
         {showForm && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Reason for leave */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Reason for Leave
@@ -302,7 +305,6 @@ export default function LeaveApplication() {
                   required
                 />
               </div>
-              {/* Optional document upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Optional Document
@@ -342,7 +344,6 @@ export default function LeaveApplication() {
                   </div>
                 )}
               </div>
-              {/* Leave from and to with date and time pickers */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
@@ -420,6 +421,17 @@ export default function LeaveApplication() {
                         <span className="font-medium text-lg">
                           {app.reason}
                         </span>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${
+                            app.status === "approved"
+                              ? "bg-green-100 text-green-800"
+                              : app.status === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {app.status}
+                        </span>
                       </div>
                       <p className="text-gray-600 mb-2">
                         {app.fileName && app.fileData && (
@@ -441,12 +453,6 @@ export default function LeaveApplication() {
                               .toLocaleString()}`}
                           </span>
                         )}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Status:{" "}
-                        <span className="font-semibold capitalize">
-                          {app.status}
-                        </span>
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         Created:{" "}
@@ -480,8 +486,15 @@ export default function LeaveApplication() {
     );
   }
 
-  // Department admin
   if (userData?.role === "department_admin") {
+    const departmentApps = leaveApplications.filter(
+      (app) => app.createdBy.departmentId === userData.departmentId
+    );
+    const counts = countApplications(departmentApps);
+    const pendingHodApps = departmentApps.filter(
+      (app) => app.approval?.hod?.status === "pending"
+    );
+
     return (
       <div className="space-y-8">
         <div className="flex justify-between items-center">
@@ -496,10 +509,25 @@ export default function LeaveApplication() {
             {showForm ? "Close" : "Apply for Leave"}
           </button>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+            <h3 className="text-gray-500 text-sm font-medium">Pending</h3>
+            <p className="text-2xl font-bold">{counts.pending}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+            <h3 className="text-gray-500 text-sm font-medium">Approved</h3>
+            <p className="text-2xl font-bold">{counts.approved}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+            <h3 className="text-gray-500 text-sm font-medium">Rejected</h3>
+            <p className="text-2xl font-bold">{counts.rejected}</p>
+          </div>
+        </div>
+
         {showForm && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Reason for leave */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Reason for Leave
@@ -513,7 +541,6 @@ export default function LeaveApplication() {
                   required
                 />
               </div>
-              {/* Optional document upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Optional Document
@@ -553,7 +580,6 @@ export default function LeaveApplication() {
                   </div>
                 )}
               </div>
-              {/* Leave from and to with date and time pickers */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
@@ -608,28 +634,32 @@ export default function LeaveApplication() {
             </form>
           </div>
         )}
+
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-6 flex items-center">
             <Upload size={24} className="mr-2" />
-            Department Leave Applications
+            Pending HOD Approval ({pendingHodApps.length})
           </h2>
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
-          ) : leaveApplications.length === 0 ? (
+          ) : pendingHodApps.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No leave applications found.
+              No pending applications for HOD approval.
             </div>
           ) : (
             <div className="space-y-4">
-              {leaveApplications.map((app) => (
+              {pendingHodApps.map((app) => (
                 <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className="font-medium text-lg">
                           {app.reason}
+                        </span>
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {app.status}
                         </span>
                       </div>
                       <p className="text-gray-600 mb-2">
@@ -653,32 +683,12 @@ export default function LeaveApplication() {
                           </span>
                         )}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        Status:{" "}
-                        <span className="font-semibold capitalize">
-                          {app.status}
-                        </span>
-                      </p>
                       <p className="text-xs text-gray-400 mt-1">
                         Created:{" "}
                         {app.createdAt &&
                           app.createdAt.toDate().toLocaleString()}
                         <br />
-                        Approval: HOD - {app.approval?.hod?.status}{" "}
-                        {app.approval?.hod?.by
-                          ? `by ${app.approval.hod.by.name}`
-                          : ""}{" "}
-                        {app.approval?.hod?.note
-                          ? `: ${app.approval.hod.note}`
-                          : ""}
-                        <br />
-                        CEO/Admin - {app.approval?.ceo?.status}{" "}
-                        {app.approval?.ceo?.by
-                          ? `by ${app.approval.ceo.by.name}`
-                          : ""}{" "}
-                        {app.approval?.ceo?.note
-                          ? `: ${app.approval.ceo.note}`
-                          : ""}
+                        By: {app.createdBy.name} ({app.createdBy.email})
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 ml-4">
@@ -701,36 +711,152 @@ export default function LeaveApplication() {
             </div>
           )}
         </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <Upload size={24} className="mr-2" />
+            Department Leave History
+          </h2>
+          {departmentApps.filter((app) => app.status !== "pending").length ===
+          0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No approved or rejected applications yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {departmentApps
+                .filter((app) => app.status !== "pending")
+                .map((app) => (
+                  <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="font-medium text-lg">
+                            {app.reason}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              app.status === "approved"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {app.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mb-2">
+                          {app.fileName && app.fileData && (
+                            <a
+                              href={app.fileData}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 underline mr-2"
+                            >
+                              {app.fileName}
+                            </a>
+                          )}
+                          {app.from && app.to && (
+                            <span>
+                              {`From: ${app.from
+                                .toDate()
+                                .toLocaleString()} To: ${app.to
+                                .toDate()
+                                .toLocaleString()}`}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Created:{" "}
+                          {app.createdAt &&
+                            app.createdAt.toDate().toLocaleString()}
+                          <br />
+                          By: {app.createdBy.name} ({app.createdBy.email})
+                          <br />
+                          Approval: HOD - {app.approval?.hod?.status}{" "}
+                          {app.approval?.hod?.by
+                            ? `by ${app.approval.hod.by.name}`
+                            : ""}{" "}
+                          {app.approval?.hod?.note
+                            ? `: ${app.approval.hod.note}`
+                            : ""}
+                          <br />
+                          CEO/Admin - {app.approval?.ceo?.status}{" "}
+                          {app.approval?.ceo?.by
+                            ? `by ${app.approval.ceo.by.name}`
+                            : ""}{" "}
+                          {app.approval?.ceo?.note
+                            ? `: ${app.approval.ceo.note}`
+                            : ""}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Admin
   if (userData?.role === "admin") {
+    const counts = countApplications(leaveApplications);
+    const pendingCeoApps = leaveApplications.filter(
+      (app) =>
+        app.approval?.hod?.status === "approved" &&
+        app.approval?.ceo?.status === "pending"
+    );
+    const approvedApps = leaveApplications.filter(
+      (app) => app.status === "approved"
+    );
+    const rejectedApps = leaveApplications.filter(
+      (app) => app.status === "rejected"
+    );
+
     return (
       <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+            <h3 className="text-gray-500 text-sm font-medium">
+              Pending CEO Approval
+            </h3>
+            <p className="text-2xl font-bold">{pendingCeoApps.length}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+            <h3 className="text-gray-500 text-sm font-medium">Approved</h3>
+            <p className="text-2xl font-bold">{approvedApps.length}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-red-500">
+            <h3 className="text-gray-500 text-sm font-medium">Rejected</h3>
+            <p className="text-2xl font-bold">{rejectedApps.length}</p>
+          </div>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-6 flex items-center">
             <Upload size={24} className="mr-2" />
-            All Leave Applications (Pending CEO/Admin Approval)
+            Pending CEO/Admin Approval ({pendingCeoApps.length})
           </h2>
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
-          ) : leaveApplications.length === 0 ? (
+          ) : pendingCeoApps.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No leave applications found.
+              No pending applications for CEO/Admin approval.
             </div>
           ) : (
             <div className="space-y-4">
-              {leaveApplications.map((app) => (
+              {pendingCeoApps.map((app) => (
                 <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <span className="font-medium text-lg">
                           {app.reason}
+                        </span>
+                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                          {app.status}
                         </span>
                       </div>
                       <p className="text-gray-600 mb-2">
@@ -754,31 +880,21 @@ export default function LeaveApplication() {
                           </span>
                         )}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        Status:{" "}
-                        <span className="font-semibold capitalize">
-                          {app.status}
-                        </span>
-                      </p>
                       <p className="text-xs text-gray-400 mt-1">
                         Created:{" "}
                         {app.createdAt &&
                           app.createdAt.toDate().toLocaleString()}
                         <br />
-                        Approval: HOD - {app.approval?.hod?.status}{" "}
+                        Department: {app.createdBy.departmentName}
+                        <br />
+                        By: {app.createdBy.name} ({app.createdBy.email})
+                        <br />
+                        HOD Approval: {app.approval?.hod?.status}{" "}
                         {app.approval?.hod?.by
                           ? `by ${app.approval.hod.by.name}`
                           : ""}{" "}
                         {app.approval?.hod?.note
                           ? `: ${app.approval.hod.note}`
-                          : ""}
-                        <br />
-                        CEO/Admin - {app.approval?.ceo?.status}{" "}
-                        {app.approval?.ceo?.by
-                          ? `by ${app.approval.ceo.by.name}`
-                          : ""}{" "}
-                        {app.approval?.ceo?.note
-                          ? `: ${app.approval.ceo.note}`
                           : ""}
                       </p>
                     </div>
@@ -802,11 +918,96 @@ export default function LeaveApplication() {
             </div>
           )}
         </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-6 flex items-center">
+            <Upload size={24} className="mr-2" />
+            All Leave History
+          </h2>
+          {leaveApplications.filter((app) => app.status !== "pending")
+            .length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No approved or rejected applications yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {leaveApplications
+                .filter((app) => app.status !== "pending")
+                .map((app) => (
+                  <div key={app.id} className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="font-medium text-lg">
+                            {app.reason}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              app.status === "approved"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {app.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mb-2">
+                          {app.fileName && app.fileData && (
+                            <a
+                              href={app.fileData}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 underline mr-2"
+                            >
+                              {app.fileName}
+                            </a>
+                          )}
+                          {app.from && app.to && (
+                            <span>
+                              {`From: ${app.from
+                                .toDate()
+                                .toLocaleString()} To: ${app.to
+                                .toDate()
+                                .toLocaleString()}`}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Created:{" "}
+                          {app.createdAt &&
+                            app.createdAt.toDate().toLocaleString()}
+                          <br />
+                          Department: {app.createdBy.departmentName}
+                          <br />
+                          By: {app.createdBy.name} ({app.createdBy.email})
+                          <br />
+                          Approval: HOD - {app.approval?.hod?.status}{" "}
+                          {app.approval?.hod?.by
+                            ? `by ${app.approval.hod.by.name}`
+                            : ""}{" "}
+                          {app.approval?.hod?.note
+                            ? `: ${app.approval.hod.note}`
+                            : ""}
+                          <br />
+                          CEO/Admin - {app.approval?.ceo?.status}{" "}
+                          {app.approval?.ceo?.by
+                            ? `by ${app.approval.ceo.by.name}`
+                            : ""}{" "}
+                          {app.approval?.ceo?.note
+                            ? `: ${app.approval.ceo.note}`
+                            : ""}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Default fallback
   return (
     <div className="text-center py-8 text-gray-500">
       Not authorized to view this page.
