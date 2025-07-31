@@ -1,15 +1,53 @@
-import React from 'react';
-import { Users, Clock, FileText, UserPlus, LayoutDashboard, LogOut, Building, FileSpreadsheet, IndianRupee, BarChart, FileUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React from "react";
+import {
+  Users,
+  Clock,
+  FileText,
+  UserPlus,
+  LayoutDashboard,
+  LogOut,
+  Building,
+  FileSpreadsheet,
+  IndianRupee,
+  BarChart,
+  FileUp,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface SidebarProps {
-  currentView: 'users' | 'attendance' | 'reports' | 'organizations' | 'attendance-report' | 'salaries' | 'salary-report' | 'analysis' | 'notices';
-  onViewChange: (view: 'users' | 'attendance' | 'reports' | 'organizations' | 'attendance-report' | 'salaries' | 'salary-report' | 'analysis' | 'notices') => void;
+  currentView:
+    | "users"
+    | "attendance"
+    | "reports"
+    | "organizations"
+    | "attendance-report"
+    | "salaries"
+    | "salary-report"
+    | "analysis"
+    | "notices"
+    | "leave-application";
+  onViewChange: (
+    view:
+      | "users"
+      | "attendance"
+      | "reports"
+      | "organizations"
+      | "attendance-report"
+      | "salaries"
+      | "salary-report"
+      | "analysis"
+      | "notices"
+      | "leave-application"
+  ) => void;
   onSignOut: () => void;
 }
 
-export default function Sidebar({ currentView, onViewChange, onSignOut }: SidebarProps) {
+export default function Sidebar({
+  currentView,
+  onViewChange,
+  onSignOut,
+}: SidebarProps) {
   const navigate = useNavigate();
 
   return (
@@ -19,7 +57,7 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
       className="w-64 bg-blue-500 text-white p-6"
     >
       <div className="flex flex-col items-center mb-8">
-        <img 
+        <img
           src="https://media.licdn.com/dms/image/v2/C560BAQEV5bmhSzmwXA/company-logo_200_200/company-logo_200_200/0/1632725060447?e=2147483647&v=beta&t=HLSjgaNC62aOcklA0mMrLOzEue-CD6QsGxP8fVnr610"
           alt="APMB Logo"
           className="w-20 h-20 mb-4 object-contain bg-white rounded-full p-2"
@@ -29,9 +67,11 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
 
       <nav className="space-y-4">
         <button
-          onClick={() => onViewChange('organizations')}
+          onClick={() => onViewChange("organizations")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'organizations' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "organizations"
+              ? "bg-white/20"
+              : "hover:bg-white/10"
           }`}
         >
           <Building size={20} />
@@ -39,9 +79,9 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('users')}
+          onClick={() => onViewChange("users")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'users' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "users" ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
           <Users size={20} />
@@ -49,9 +89,9 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('salaries')}
+          onClick={() => onViewChange("salaries")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'salaries' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "salaries" ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
           <IndianRupee size={20} />
@@ -59,19 +99,32 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('salary-report')}
+          onClick={() => onViewChange("salary-report")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'salary-report' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "salary-report"
+              ? "bg-white/20"
+              : "hover:bg-white/10"
           }`}
         >
           <IndianRupee size={20} />
           <span>Salary Report</span>
         </button>
+        <button
+          onClick={() => onViewChange("leave-application")}
+          className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
+            currentView === "leave-application"
+              ? "bg-white/20"
+              : "hover:bg-white/10"
+          }`}
+        >
+          <IndianRupee size={20} />
+          <span>Leave Application</span>
+        </button>
 
         <button
-          onClick={() => onViewChange('attendance')}
+          onClick={() => onViewChange("attendance")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'attendance' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "attendance" ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
           <Clock size={20} />
@@ -79,9 +132,11 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('attendance-report')}
+          onClick={() => onViewChange("attendance-report")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'attendance-report' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "attendance-report"
+              ? "bg-white/20"
+              : "hover:bg-white/10"
           }`}
         >
           <FileSpreadsheet size={20} />
@@ -89,9 +144,9 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('analysis')}
+          onClick={() => onViewChange("analysis")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'analysis' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "analysis" ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
           <BarChart size={20} />
@@ -99,9 +154,9 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('reports')}
+          onClick={() => onViewChange("reports")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'reports' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "reports" ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
           <FileText size={20} />
@@ -109,9 +164,9 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => onViewChange('notices')}
+          onClick={() => onViewChange("notices")}
           className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
-            currentView === 'notices' ? 'bg-white/20' : 'hover:bg-white/10'
+            currentView === "notices" ? "bg-white/20" : "hover:bg-white/10"
           }`}
         >
           <FileUp size={20} />
@@ -119,7 +174,7 @@ export default function Sidebar({ currentView, onViewChange, onSignOut }: Sideba
         </button>
 
         <button
-          onClick={() => navigate('/admin/invite')}
+          onClick={() => navigate("/admin/invite")}
           className="flex items-center space-x-2 w-full px-4 py-2 rounded-lg hover:bg-white/10 transition-colors"
         >
           <UserPlus size={20} />
