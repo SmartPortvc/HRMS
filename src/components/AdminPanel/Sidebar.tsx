@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { SlEnvolopeLetter } from "react-icons/sl";
 
 interface SidebarProps {
   currentView:
@@ -117,7 +118,7 @@ export default function Sidebar({
               : "hover:bg-white/10"
           }`}
         >
-          <IndianRupee size={20} />
+          <SlEnvolopeLetter size={20} />
           <span>Leave Application</span>
         </button>
 

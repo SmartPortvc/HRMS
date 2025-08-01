@@ -138,6 +138,10 @@ export default function LeaveApplication() {
     fetchApplications();
   }, [userData, userLoading]);
 
+  console.log({
+    userData,
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userData) {
@@ -197,7 +201,7 @@ export default function LeaveApplication() {
           name: userData.name,
           email: userData.email,
           departmentId: userData.departmentId,
-          departmentName: userData.departmentName || userData.departmentId,
+          departmentName: userData.departmentName || "Not Available",
         },
         status: userData?.role === "department_admin" ? "pending" : "pending",
         approval: approvalFlow,
