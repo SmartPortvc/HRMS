@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { SlEnvolopeLetter } from "react-icons/sl";
 
 interface SidebarProps {
   currentView:
@@ -27,7 +28,8 @@ interface SidebarProps {
     | "salary-report"
     | "analysis"
     | "notices"
-    | "master-data";
+    | "master-data"
+    | "leave-application";
   onViewChange: (
     view:
       | "users"
@@ -40,6 +42,7 @@ interface SidebarProps {
       | "analysis"
       | "notices"
       | "master-data"
+      | "leave-application"
   ) => void;
   onSignOut: () => void;
 }
@@ -119,6 +122,17 @@ export default function Sidebar({
         >
           <IndianRupee size={20} />
           <span>Salary Report</span>
+        </button>
+        <button
+          onClick={() => onViewChange("leave-application")}
+          className={`flex items-center space-x-2 w-full px-4 py-2 rounded-lg transition-colors ${
+            currentView === "leave-application"
+              ? "bg-white/20"
+              : "hover:bg-white/10"
+          }`}
+        >
+          <SlEnvolopeLetter size={20} />
+          <span>Leave Application</span>
         </button>
 
         <button
