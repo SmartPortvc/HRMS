@@ -1,70 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs, addDoc, doc, updateDoc, orderBy } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
-import { auth, db } from '../lib/firebase';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  doc,
+  updateDoc,
+  orderBy,
+} from "firebase/firestore";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../lib/firebase";
+import toast from "react-hot-toast";
 
-import UserSidebar from '../components/UserPanel/UserSidebar';
-import Profile from '../components/UserPanel/Profile';
-import AttendanceUpload from '../components/UserPanel/AttendanceUpload';
-import AttendanceTracker from '../components/UserPanel/AttendanceTracker';
-import DocumentUpload from '../components/UserPanel/DocumentUpload';
-import PaySlip from '../components/UserPanel/PaySlip';
-import SalaryReport from '../components/UserPanel/SalaryReport';
-import DepartmentUsers from '../components/UserPanel/DepartmentUsers';
-import DepartmentAttendance from '../components/UserPanel/DepartmentAttendance';
-import DepartmentSalary from '../components/UserPanel/DepartmentSalary';
-import DepartmentWeeklyReports from '../components/UserPanel/DepartmentWeeklyReports';
-import NoticeList from '../components/UserPanel/NoticeList';
+import UserSidebar from "../components/UserPanel/UserSidebar";
+import Profile from "../components/UserPanel/Profile";
+import AttendanceUpload from "../components/UserPanel/AttendanceUpload";
+import AttendanceTracker from "../components/UserPanel/AttendanceTracker";
+import DocumentUpload from "../components/UserPanel/DocumentUpload";
+import PaySlip from "../components/UserPanel/PaySlip";
+import SalaryReport from "../components/UserPanel/SalaryReport";
+import DepartmentUsers from "../components/UserPanel/DepartmentUsers";
+import DepartmentAttendance from "../components/UserPanel/DepartmentAttendance";
+import DepartmentSalary from "../components/UserPanel/DepartmentSalary";
+import DepartmentWeeklyReports from "../components/UserPanel/DepartmentWeeklyReports";
+import NoticeList from "../components/UserPanel/NoticeList";
+import LeaveApplication from "../components/UserPanel/LeaveApplication";
 
 export default function UserPanel() {
   const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState('profile');
+  const [currentView, setCurrentView] = useState("profile");
   const [userData, setUserData] = useState<any>(null);
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [filteredAttendance, setFilteredAttendance] = useState<any[]>([]);
   const [weeklyReports, setWeeklyReports] = useState<any[]>([]);
-  const [weeklyReport, setWeeklyReport] = useState('');
+  const [weeklyReport, setWeeklyReport] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<string>(
-    new Date().toLocaleString('default', { month: 'long' })
+    new Date().toLocaleString("default", { month: "long" })
   );
   const [selectedYear, setSelectedYear] = useState<string>(
     new Date().getFullYear().toString()
   );
 
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
-  const years = Array.from(
-    { length: 5 },
-    (_, i) => (new Date().getFullYear() - 2 + i).toString()
+  const years = Array.from({ length: 5 }, (_, i) =>
+    (new Date().getFullYear() - 2 + i).toString()
   );
 
   const checkCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser');
+      toast.error("Geolocation is not supported by your browser");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        toast.success(`Your location - Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`);
+        toast.success(
+          `Your location - Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`
+        );
       },
       (error) => {
-        let errorMessage = 'Failed to get location';
+        let errorMessage = "Failed to get location";
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Please allow location access';
+            errorMessage = "Please allow location access";
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable';
+            errorMessage = "Location information unavailable";
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
+            errorMessage = "Location request timed out";
             break;
         }
         toast.error(errorMessage);
@@ -90,17 +111,17 @@ export default function UserPanel() {
   const fetchUserData = async () => {
     try {
       if (auth.currentUser) {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('uid', '==', auth.currentUser.uid));
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("uid", "==", auth.currentUser.uid));
         const querySnapshot = await getDocs(q);
-        
+
         if (!querySnapshot.empty) {
           setUserData(querySnapshot.docs[0].data());
         }
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
-      toast.error('Failed to fetch user data');
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to fetch user data");
     }
   };
 
@@ -111,23 +132,23 @@ export default function UserPanel() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const attendanceRef = collection(db, 'attendance');
+      const attendanceRef = collection(db, "attendance");
       const q = query(
         attendanceRef,
-        where('userId', '==', auth.currentUser.uid),
-        where('date', '>=', today)
+        where("userId", "==", auth.currentUser.uid),
+        where("date", ">=", today)
       );
 
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         setTodayAttendance({
           id: querySnapshot.docs[0].id,
-          ...querySnapshot.docs[0].data()
+          ...querySnapshot.docs[0].data(),
         });
       }
     } catch (error) {
-      console.error('Error fetching today\'s attendance:', error);
-      toast.error('Failed to fetch attendance');
+      console.error("Error fetching today's attendance:", error);
+      toast.error("Failed to fetch attendance");
     }
   };
 
@@ -135,24 +156,24 @@ export default function UserPanel() {
     try {
       if (!auth.currentUser) return;
 
-      const attendanceRef = collection(db, 'attendance');
+      const attendanceRef = collection(db, "attendance");
       const q = query(
         attendanceRef,
-        where('userId', '==', auth.currentUser.uid),
-        orderBy('date', 'desc')
+        where("userId", "==", auth.currentUser.uid),
+        orderBy("date", "desc")
       );
 
       const querySnapshot = await getDocs(q);
-      const records = querySnapshot.docs.map(doc => ({
+      const records = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
       setAttendanceHistory(records);
       filterAttendanceRecords(records, selectedMonth, selectedYear);
     } catch (error) {
-      console.error('Error fetching attendance history:', error);
-      toast.error('Failed to fetch attendance history');
+      console.error("Error fetching attendance history:", error);
+      toast.error("Failed to fetch attendance history");
     }
   };
 
@@ -160,31 +181,35 @@ export default function UserPanel() {
     try {
       if (!auth.currentUser) return;
 
-      const reportsRef = collection(db, 'weekly_reports');
+      const reportsRef = collection(db, "weekly_reports");
       const q = query(
         reportsRef,
-        where('userId', '==', auth.currentUser.uid),
-        orderBy('submittedAt', 'desc')
+        where("userId", "==", auth.currentUser.uid),
+        orderBy("submittedAt", "desc")
       );
 
       const querySnapshot = await getDocs(q);
-      const reports = querySnapshot.docs.map(doc => ({
+      const reports = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
 
       setWeeklyReports(reports);
     } catch (error) {
-      console.error('Error fetching weekly reports:', error);
-      toast.error('Failed to fetch weekly reports');
+      console.error("Error fetching weekly reports:", error);
+      toast.error("Failed to fetch weekly reports");
     }
   };
 
-  const filterAttendanceRecords = (records: any[], month: string, year: string) => {
-    const filtered = records.filter(record => {
+  const filterAttendanceRecords = (
+    records: any[],
+    month: string,
+    year: string
+  ) => {
+    const filtered = records.filter((record) => {
       const recordDate = new Date(record.date.seconds * 1000);
       return (
-        recordDate.toLocaleString('default', { month: 'long' }) === month &&
+        recordDate.toLocaleString("default", { month: "long" }) === month &&
         recordDate.getFullYear().toString() === year
       );
     });
@@ -192,7 +217,7 @@ export default function UserPanel() {
   };
 
   const handleMarkAttendance = async (
-    type: 'start' | 'end' | 'ooo',
+    type: "start" | "end" | "ooo",
     location?: { name: string; latitude: number; longitude: number }
   ) => {
     try {
@@ -200,77 +225,97 @@ export default function UserPanel() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const monthName = now.toLocaleString('default', { month: 'long' });
+      const monthName = now.toLocaleString("default", { month: "long" });
 
       if (!todayAttendance) {
         const attendanceData = {
           userId: auth.currentUser?.uid,
           date: today,
           month: monthName,
-          startTime: type === 'start' ? now : null,
-          endTime: type === 'end' ? now : null,
+          startTime: type === "start" ? now : null,
+          endTime: type === "end" ? now : null,
           location: location || null,
-          status: type === 'ooo' ? 'ooo' : 'present',
+          status: type === "ooo" ? "ooo" : "present",
           createdAt: now,
         };
 
-        const docRef = await addDoc(collection(db, 'attendance'), attendanceData);
-        const newAttendance = { 
-          id: docRef.id, 
+        const docRef = await addDoc(
+          collection(db, "attendance"),
+          attendanceData
+        );
+        const newAttendance = {
+          id: docRef.id,
           ...attendanceData,
           date: { seconds: today.getTime() / 1000 },
-          startTime: type === 'start' ? { seconds: now.getTime() / 1000 } : null,
-          endTime: type === 'end' ? { seconds: now.getTime() / 1000 } : null
+          startTime:
+            type === "start" ? { seconds: now.getTime() / 1000 } : null,
+          endTime: type === "end" ? { seconds: now.getTime() / 1000 } : null,
         };
-        
+
         setTodayAttendance(newAttendance);
-        setAttendanceHistory(prev => [newAttendance, ...prev]);
-        filterAttendanceRecords([newAttendance, ...attendanceHistory], selectedMonth, selectedYear);
-        toast.success(type === 'ooo' ? 'Out of office marked successfully' : `Work ${type} time marked successfully`);
+        setAttendanceHistory((prev) => [newAttendance, ...prev]);
+        filterAttendanceRecords(
+          [newAttendance, ...attendanceHistory],
+          selectedMonth,
+          selectedYear
+        );
+        toast.success(
+          type === "ooo"
+            ? "Out of office marked successfully"
+            : `Work ${type} time marked successfully`
+        );
       } else {
-        const attendanceRef = doc(db, 'attendance', todayAttendance.id);
-        const updateData = type === 'ooo' 
-          ? { status: 'ooo' }
-          : {
-              [type === 'start' ? 'startTime' : 'endTime']: now,
-              location: location
-            };
-        
+        const attendanceRef = doc(db, "attendance", todayAttendance.id);
+        const updateData =
+          type === "ooo"
+            ? { status: "ooo" }
+            : {
+                [type === "start" ? "startTime" : "endTime"]: now,
+                location: location,
+              };
+
         await updateDoc(attendanceRef, updateData);
-        
-        const updatedAttendance = { 
+
+        const updatedAttendance = {
           ...todayAttendance,
           ...updateData,
-          [type === 'start' ? 'startTime' : 'endTime']: type === 'ooo' ? null : { 
-            seconds: now.getTime() / 1000 
-          }
+          [type === "start" ? "startTime" : "endTime"]:
+            type === "ooo"
+              ? null
+              : {
+                  seconds: now.getTime() / 1000,
+                },
         };
-        
+
         setTodayAttendance(updatedAttendance);
-        setAttendanceHistory(prev => 
-          prev.map(record => 
+        setAttendanceHistory((prev) =>
+          prev.map((record) =>
             record.id === todayAttendance.id ? updatedAttendance : record
           )
         );
         filterAttendanceRecords(
-          attendanceHistory.map(record => 
+          attendanceHistory.map((record) =>
             record.id === todayAttendance.id ? updatedAttendance : record
           ),
           selectedMonth,
           selectedYear
         );
-        toast.success(type === 'ooo' ? 'Out of office marked successfully' : `Work ${type} time marked successfully`);
+        toast.success(
+          type === "ooo"
+            ? "Out of office marked successfully"
+            : `Work ${type} time marked successfully`
+        );
       }
     } catch (error) {
-      console.error('Error marking attendance:', error);
-      toast.error('Failed to mark attendance');
+      console.error("Error marking attendance:", error);
+      toast.error("Failed to mark attendance");
     }
   };
 
   const handleSubmitWeeklyReport = async () => {
     try {
       if (!weeklyReport.trim()) {
-        toast.error('Please enter your weekly report');
+        toast.error("Please enter your weekly report");
         return;
       }
 
@@ -278,31 +323,31 @@ export default function UserPanel() {
       const weekEnding = new Date();
       weekEnding.setHours(23, 59, 59, 999);
 
-      await addDoc(collection(db, 'weekly_reports'), {
+      await addDoc(collection(db, "weekly_reports"), {
         userId: auth.currentUser?.uid,
         report: weeklyReport,
         weekEnding,
         submittedAt: now,
-        month: now.toLocaleString('default', { month: 'long' }),
-        year: now.getFullYear().toString()
+        month: now.toLocaleString("default", { month: "long" }),
+        year: now.getFullYear().toString(),
       });
 
-      toast.success('Weekly report submitted successfully');
-      setWeeklyReport('');
+      toast.success("Weekly report submitted successfully");
+      setWeeklyReport("");
       fetchWeeklyReports();
     } catch (error) {
-      console.error('Error submitting weekly report:', error);
-      toast.error('Failed to submit weekly report');
+      console.error("Error submitting weekly report:", error);
+      toast.error("Failed to submit weekly report");
     }
   };
 
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      console.error('Error signing out:', error);
-      toast.error('Failed to sign out');
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out");
     }
   };
 
@@ -327,11 +372,9 @@ export default function UserPanel() {
       />
 
       <div className="flex-1 p-8">
-        {currentView === 'profile' && (
-          <Profile userId={userData.uid} />
-        )}
+        {currentView === "profile" && <Profile userId={userData.uid} />}
 
-        {currentView === 'upload' && (
+        {currentView === "upload" && (
           <AttendanceUpload
             todayAttendance={todayAttendance}
             isFriday={isFriday}
@@ -342,7 +385,7 @@ export default function UserPanel() {
           />
         )}
 
-        {currentView === 'track' && (
+        {currentView === "track" && (
           <AttendanceTracker
             filteredAttendance={filteredAttendance}
             weeklyReports={weeklyReports}
@@ -355,37 +398,33 @@ export default function UserPanel() {
           />
         )}
 
-        {currentView === 'documents' && (
-          <DocumentUpload />
-        )}
+        {currentView === "documents" && <DocumentUpload />}
 
-        {currentView === 'payslip' && (
-          <PaySlip />
-        )}
+        {currentView === "payslip" && <PaySlip />}
 
-        {currentView === 'salary-report' && (
-          <SalaryReport />
-        )}
+        {currentView === "salary-report" && <SalaryReport />}
 
-        {currentView === 'notices' && (
-          <NoticeList />
-        )}
+        {currentView === "notices" && <NoticeList />}
 
-        {currentView === 'users' && userData.role === 'department_admin' && (
+        {currentView === "leave-application" && <LeaveApplication />}
+
+        {currentView === "users" && userData.role === "department_admin" && (
           <DepartmentUsers users={[]} />
         )}
 
-        {currentView === 'department-salary' && userData.role === 'department_admin' && (
-          <DepartmentSalary departmentId={userData.departmentId} />
-        )}
+        {currentView === "department-salary" &&
+          userData.role === "department_admin" && (
+            <DepartmentSalary departmentId={userData.departmentId} />
+          )}
 
-        {currentView === 'reports' && userData.role === 'department_admin' && (
+        {currentView === "reports" && userData.role === "department_admin" && (
           <DepartmentWeeklyReports reports={[]} />
         )}
 
-        {currentView === 'attendance-report' && userData.role === 'department_admin' && (
-          <DepartmentAttendance records={[]} />
-        )}
+        {currentView === "attendance-report" &&
+          userData.role === "department_admin" && (
+            <DepartmentAttendance records={[]} />
+          )}
       </div>
     </div>
   );
