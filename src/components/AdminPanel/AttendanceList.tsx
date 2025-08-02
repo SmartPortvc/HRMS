@@ -87,7 +87,7 @@ export default function AttendanceList({ records }: AttendanceListProps) {
               <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
                 Start Time
               </th>
-              <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 End Time
               </th>
               <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider">

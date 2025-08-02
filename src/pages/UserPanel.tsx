@@ -26,6 +26,7 @@ import DepartmentAttendance from "../components/UserPanel/DepartmentAttendance";
 import DepartmentSalary from "../components/UserPanel/DepartmentSalary";
 import DepartmentWeeklyReports from "../components/UserPanel/DepartmentWeeklyReports";
 import NoticeList from "../components/UserPanel/NoticeList";
+import LeaveApplication from "../components/UserPanel/LeaveApplication";
 
 export default function UserPanel() {
   const navigate = useNavigate();
@@ -404,6 +405,8 @@ export default function UserPanel() {
         {currentView === "salary-report" && <SalaryReport />}
 
         {currentView === "notices" && <NoticeList />}
+
+        {currentView === "leave-application" && <LeaveApplication />}
 
         {currentView === "users" && userData.role === "department_admin" && (
           <DepartmentUsers users={[]} />
